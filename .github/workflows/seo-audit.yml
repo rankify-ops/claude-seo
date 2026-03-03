@@ -32,7 +32,7 @@ jobs:
           echo "Running SEO audit for: $AUDIT_URL"
           
           # Run Claude Code SEO audit and capture output
-          claude --print "
+          claude --print --dangerously-skip-permissions "
           You are an SEO expert. Analyse the website at $AUDIT_URL and produce a comprehensive SEO audit report.
           
           Run the following analyses:
@@ -57,7 +57,7 @@ jobs:
           AUDIT_URL: ${{ github.event.client_payload.url }}
         run: |
           # Read the audit report
-          REPORT=$(cat audit_report.md)
+          REPORT=$(cat audit_report.md | tr -d '\000-\031' | sed 's/"/\\"/g')
           
           # Post as comment on ClickUp task
           curl -X POST "https://api.clickup.com/api/v2/task/$TASK_ID/comment" \
