@@ -68,12 +68,4 @@ jobs:
               \"notify_all\": true
             }"
           
-          # Update task status to Audit Complete
-          curl -X PUT "https://api.clickup.com/api/v2/task/$TASK_ID" \
-            -H "Authorization: $CLICKUP_API_KEY" \
-            -H "Content-Type: application/json" \
-            -d "{
-              \"status\": \"Audit Complete\"
-            }"
-          
           echo "Report posted to ClickUp task $TASK_ID"
