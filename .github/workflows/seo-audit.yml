@@ -1,14 +1,11 @@
 name: SEO Audit
-
 on:
   repository_dispatch:
     types: [seo-audit]
-
 jobs:
   audit:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -31,7 +28,6 @@ jobs:
         run: |
           echo "Running SEO audit for: $AUDIT_URL"
           
-          # Run Claude Code SEO audit and capture output
           claude --print --dangerously-skip-permissions "
           You are an SEO expert. Analyse the website at $AUDIT_URL and produce a comprehensive SEO audit report.
           
@@ -56,14 +52,12 @@ jobs:
           TASK_ID: ${{ github.event.client_payload.task_id }}
           AUDIT_URL: ${{ github.event.client_payload.url }}
         run: |
-          # Read the audit report
-          REPORT=$(cat audit_report.md | tr -d '\000-\031' | sed 's/"/\\"/g')
+          REPORT=$(cat audit_report.md | tr -d '\000-\031' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | tr '\n' ' ')
           
-          # Post as comment on ClickUp task
           curl -X POST "https://api.clickup.com/api/v2/task/$TASK_ID/comment" \
             -H "Authorization: $CLICKUP_API_KEY" \
             -H "Content-Type: application/json" \
-            -d "{
+            --data-binary "{
               \"comment_text\": \"## SEO Audit Report\n\nAudit completed for: $AUDIT_URL\n\n$REPORT\",
               \"notify_all\": true
             }"
