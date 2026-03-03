@@ -1,0 +1,82 @@
+name: SEO Audit
+
+on:
+  repository_dispatch:
+    types: [seo-audit]
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run SEO Audit
+        id: audit
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AUDIT_URL: ${{ github.event.client_payload.url }}
+          TASK_ID: ${{ github.event.client_payload.task_id }}
+          CLIENT_NAME: ${{ github.event.client_payload.client_name }}
+        run: |
+          echo "Running SEO audit for: $AUDIT_URL"
+          
+          # Run Claude Code SEO audit and capture output
+          claude --print "
+          You are an SEO expert. Analyse the website at $AUDIT_URL and produce a comprehensive SEO audit report.
+          
+          Run the following analyses:
+          1. Technical SEO audit - crawlability, indexability, site speed, Core Web Vitals, mobile friendliness, SSL, broken links
+          2. On-page SEO - title tags, meta descriptions, heading structure, content quality
+          3. Schema markup - check existing schema, identify opportunities
+          4. Sitemap - check sitemap exists and is valid
+          5. GEO/AI optimisation - how well the site is optimised for AI search
+          6. Quick wins - top 5 immediate actions that will have the most impact
+          
+          Format the output as a clear markdown report with sections and priority ratings (High/Medium/Low) for each issue found.
+          Be specific and actionable. Include the exact URLs or elements that need fixing where possible.
+          " > audit_report.md
+          
+          echo "Audit complete"
+          cat audit_report.md
+
+      - name: Post report to ClickUp
+        env:
+          CLICKUP_API_KEY: ${{ secrets.CLICKUP_API_KEY }}
+          TASK_ID: ${{ github.event.client_payload.task_id }}
+          AUDIT_URL: ${{ github.event.client_payload.url }}
+        run: |
+          # Read the audit report
+          REPORT=$(cat audit_report.md)
+          
+          # Post as comment on ClickUp task
+          curl -X POST "https://api.clickup.com/api/v2/task/$TASK_ID/comment" \
+            -H "Authorization: $CLICKUP_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"comment_text\": \"## SEO Audit Report\n\nAudit completed for: $AUDIT_URL\n\n$REPORT\",
+              \"notify_all\": true
+            }"
+          
+          # Update task status to Audit Complete
+          curl -X PUT "https://api.clickup.com/api/v2/task/$TASK_ID" \
+            -H "Authorization: $CLICKUP_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"status\": \"Audit Complete\"
+            }"
+          
+          echo "Report posted to ClickUp task $TASK_ID"
