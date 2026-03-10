@@ -1,0 +1,11 @@
+/* Fix: Center the decorative dots in .hiw-topbar instead of left-aligning them */
+
+/* Replace this rule in theme.css: */
+/* OLD: .hiw-topbar{display:flex;justify-content:space-between;align-items:center;padding:18px 20px 0} */
+/* NEW: */
+.hiw-topbar{display:flex;justify-content:center;align-items:center;padding:18px 20px 0;position:relative}
+
+/* Add position:absolute to .hiw-stepnum so it stays top-right while dots are centered */
+/* OLD: .hiw-stepnum{font-size:12px;font-weight:600;color:#bbb;letter-spacing:0.05em} */
+/* NEW: */
+.hiw-stepnum{font-size:12px;font-weight:600;color:#bbb;letter-spacing:0.05em;position:absolute;right:20px;top:18px}
